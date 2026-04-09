@@ -875,7 +875,7 @@
     // ── DATABASE ────────────────────────────────────────────────────────────────
     const supabaseUrl = 'https://nplhoxqjnbkpxvjppwlh.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wbGhveHFqbmJrcHZqcHB3bGgiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc0NDQxNTM2NCwiZXhwIjoyMDU5OTkxMzY0fQ.8434121341234123412341234123412341234123412341234123412341234123';
-    const API_BASE = supabase.createClient(supabaseUrl, supabaseKey);
+    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     // ── STATE ────────────────────────────────────────────────────────────────
     let currentType = 'plug';
@@ -931,29 +931,23 @@
       clearError();
 
       try {
-        const res = await fetch(`${API_BASE}/api/signup`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        const { data, error } = await supabaseClient
+          .from('Waitlist')
+          .insert([{
             type: currentType,
             name,
             phone,
             email,
             location,
-            ...(trade && { trade }),
-          }),
-        });
+            trade: currentType === 'plug' ? trade : null,
+          }]);
 
-        const data = await res.json();
-
-        if (!res.ok) {
-          // Handle specific errors
-          if (res.status === 409) {
+        if (error) {
+          console.error('Insert error:', error);
+          if (error.code === '23505') { // Postgres unique violation code
             showError('This email or phone is already on the waitlist.');
-          } else if (data.errors && data.errors.length > 0) {
-            showError(data.errors[0]);
           } else {
-            showError(data.message || 'Something went wrong. Try again.');
+            showError(error.message || 'Something went wrong. Try again.');
           }
           btn.textContent = currentType === 'plug' ? 'Join as a Plug \u2192' : 'Join as a Client \u2192';
           btn.style.opacity = '1';
@@ -961,8 +955,12 @@
           return;
         }
 
-        // Success
-        const totalSignups = data.totalSignups || 33;
+        // Success - fetch updated count
+        const { count, error: countError } = await supabaseClient
+          .from('Waitlist')
+          .select('*', { count: 'exact', head: true });
+
+        const totalSignups = count || 33;
         showSuccess(totalSignups);
 
       } catch (err) {
