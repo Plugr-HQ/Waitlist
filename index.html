@@ -934,7 +934,7 @@
         const { data, error } = await supabaseClient
           .from('Plugr Waitlist')
           .insert([{
-            "user_type": currentType,         // Matches your type logic
+            "Type": currentType,         // Matches your type logic
             "Full Name": name,               // Matches your DB screenshot
             "Phone Number": phone,           // Matches your DB screenshot
             "Email": email,                  // Matches your DB screenshot
