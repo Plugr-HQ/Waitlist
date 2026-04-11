@@ -879,25 +879,35 @@
 
     // ── LIVE COUNT ────────────────────────────────────────────────────────────────
     async function updateLiveCount() {
+      console.log("Fetching live count..."); // This helps us see if the function even runs
       try {
         const { count, error } = await supabaseClient
           .from('Plugr Waitlist')
           .select('*', { count: 'exact', head: true });
 
-        if (error) throw error;
+        if (error) {
+          console.error("Supabase Error:", error.message);
+          return;
+        }
 
-        // This finds ALL elements with id="counter" and updates them
+        console.log("Current Count from DB:", count);
+
+        // This updates EVERY element that has the id="counter"
         const countElements = document.querySelectorAll('#counter');
         countElements.forEach(el => {
           el.textContent = count || 0;
         });
 
+        // Update the hero text specifically as well
+        const heroStrong = document.querySelector('.proof-text strong');
+        if (heroStrong) heroStrong.textContent = count || 0;
+
       } catch (err) {
-        console.error("Error fetching live count:", err);
+        console.error("Connection Error:", err);
       }
     }
 
-    // 3. CALL IT IMMEDIATELY
+    // CALL IMMEDIATELY
     // This makes sure the number isn't "0" when the page first loads
     updateLiveCount();
 
