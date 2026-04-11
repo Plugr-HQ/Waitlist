@@ -877,6 +877,30 @@
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6eGFqbWJnd3djbXd4bHRjZ2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NTk5NDAsImV4cCI6MjA5MTMzNTk0MH0.l7iJ_585GkaJc7auSlUxzcG2hV85kiG0mmNvQsfnnok';
     const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+    // ── LIVE COUNT ────────────────────────────────────────────────────────────────
+    async function updateLiveCount() {
+      try {
+        const { count, error } = await supabaseClient
+          .from('Plugr Waitlist')
+          .select('*', { count: 'exact', head: true });
+
+        if (error) throw error;
+
+        // This finds ALL elements with id="counter" and updates them
+        const countElements = document.querySelectorAll('#counter');
+        countElements.forEach(el => {
+          el.textContent = count || 0;
+        });
+
+      } catch (err) {
+        console.error("Error fetching live count:", err);
+      }
+    }
+
+    // 3. CALL IT IMMEDIATELY
+    // This makes sure the number isn't "0" when the page first loads
+    updateLiveCount();
+
     // ── STATE ────────────────────────────────────────────────────────────────
     let currentType = 'plug';
 
@@ -1013,6 +1037,11 @@
     function clearError() {
       const errEl = document.getElementById('form-error');
       if (errEl) errEl.textContent = '';
+    }
+
+    if (!error) {
+      await updateLiveCount(); // Refresh the numbers across the page
+      showSuccess(count);
     }
 
     // ── WHATSAPP CHANNEL ─────────────────────────────────────────────────────
